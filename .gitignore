@@ -1,0 +1,89 @@
+# =========================
+# Cybersecurity & Secrets
+# =========================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+secrets.json
+credentials.json
+auth.json
+token.txt
+*secret*
+*password*
+
+# =========================
+# OS Generated Files
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+*.suo
+*.user
+
+# =========================
+# Next.js & Frontend
+# =========================
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+/.next/
+/out/
+/build
+/dist
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# =========================
+# Testing & Logs
+# =========================
+coverage/
+*.log
+.pytest_cache/
+cypress/videos/
+cypress/screenshots/
+test-results/
+
+# =========================
+# Data & Databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# Local JSON data store (live mode)
+/data/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# =========================
+# Docker
+# =========================
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
+docker-entrypoint.sh

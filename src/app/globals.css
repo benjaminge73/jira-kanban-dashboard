@@ -1,0 +1,319 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    /* Neon accents */
+    --color-neon-cyan: var(--neon-cyan);
+    --color-neon-green: var(--neon-green);
+    --color-neon-pink: var(--neon-pink);
+    --color-neon-yellow: var(--neon-yellow);
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-brand-goog: var(--brand-goog);
+    --color-brand-aapl: var(--brand-aapl);
+    --color-brand-msft: var(--brand-msft);
+    --color-brand-average: #EE7307;
+
+    /* Glow shadows */
+    --shadow-glow-cyan: 0 0 20px rgba(0, 212, 255, 0.35), 0 0 40px rgba(0, 212, 255, 0.15);
+    --shadow-glow-cyan-sm: 0 0 10px rgba(0, 212, 255, 0.25), 0 0 20px rgba(0, 212, 255, 0.1);
+    --shadow-glow-green: 0 0 20px rgba(0, 255, 136, 0.35), 0 0 40px rgba(0, 255, 136, 0.15);
+    --shadow-glow-pink: 0 0 20px rgba(255, 0, 110, 0.35), 0 0 40px rgba(255, 0, 110, 0.15);
+    --shadow-glow-yellow: 0 0 20px rgba(255, 190, 11, 0.35), 0 0 40px rgba(255, 190, 11, 0.15);
+}
+
+/* ─── Light mode (kept minimal, app is dark-first) ─── */
+:root {
+    --background: #f0f4f8;
+    --foreground: #0a1628;
+
+    --card: #ffffff;
+    --card-foreground: #0a1628;
+
+    --popover: #ffffff;
+    --popover-foreground: #0a1628;
+
+    --primary: #002857;
+    --primary-foreground: #e0f0ff;
+
+    --secondary: #dde8f5;
+    --secondary-foreground: #002857;
+
+    --muted: #e8eef5;
+    --muted-foreground: #5a7a9e;
+
+    --accent: #003f8a;
+    --accent-foreground: #e0f0ff;
+
+    --destructive: #ff006e;
+    --destructive-foreground: #ffffff;
+
+    --border: rgba(0, 40, 87, 0.15);
+    --input: rgba(0, 40, 87, 0.1);
+    --ring: rgba(0, 212, 255, 0.5);
+
+    --radius: 0.5rem;
+
+    --neon-cyan: #00a8cc;
+    --neon-green: #00cc6a;
+    --neon-pink: #cc0059;
+    --neon-yellow: #cc9600;
+
+    --brand-goog: #ef4444;
+    --brand-aapl: #606060;
+    --brand-msft: #00a4ef;
+    --brand-average: #EE7307;
+}
+
+/* ─── Dark mode — Cyberpunk principal ─── */
+.dark {
+    --background: #040d1a;
+    --foreground: #e2ecf7;
+
+    --card: #071528;
+    --card-foreground: #e2ecf7;
+
+    --popover: #081830;
+    --popover-foreground: #e2ecf7;
+
+    --primary: #002857;
+    --primary-foreground: #e0f0ff;
+
+    --secondary: #0a2040;
+    --secondary-foreground: #a8c8f0;
+
+    --muted: #0c2240;
+    --muted-foreground: #6a90b8;
+
+    --accent: #003f8a;
+    --accent-foreground: #e0f0ff;
+
+    --destructive: #ff006e;
+    --destructive-foreground: #ffffff;
+
+    --border: rgba(0, 212, 255, 0.12);
+    --input: rgba(0, 212, 255, 0.08);
+    --ring: rgba(0, 212, 255, 0.4);
+
+    --neon-cyan: #00d4ff;
+    --neon-green: #00ff88;
+    --neon-pink: #ff006e;
+    --neon-yellow: #ffbe0b;
+
+    --brand-goog: #ef4444;
+    --brand-aapl: #a2aaad;
+    --brand-msft: #00a4ef;
+    --brand-average: #ffb347;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: "rlig" 1, "calt" 1;
+        /* Subtle cyberpunk grid in background */
+        background-image:
+            linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    /* Smooth transitions on interactive elements */
+    button, a, input, select, textarea {
+        transition: box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+    }
+}
+
+@layer utilities {
+    /* Neon glow utilities */
+    .glow-cyan {
+        box-shadow: var(--shadow-glow-cyan);
+    }
+    .glow-cyan-sm {
+        box-shadow: var(--shadow-glow-cyan-sm);
+    }
+    .glow-green {
+        box-shadow: var(--shadow-glow-green);
+    }
+    .glow-pink {
+        box-shadow: var(--shadow-glow-pink);
+    }
+    .glow-yellow {
+        box-shadow: var(--shadow-glow-yellow);
+    }
+
+    /* Border neon */
+    .border-neon-cyan {
+        border-color: rgba(0, 212, 255, 0.5);
+    }
+    .border-neon-green {
+        border-color: rgba(0, 255, 136, 0.5);
+    }
+    .border-neon-pink {
+        border-color: rgba(255, 0, 110, 0.5);
+    }
+
+    /* Text neon glow */
+    .text-glow-cyan {
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+    .text-glow-green {
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.7), 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+
+    /* Cyberpunk card style */
+    .card-cyber {
+        @apply bg-card border border-border rounded-lg;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(0, 212, 255, 0.05);
+    }
+    .card-cyber:hover {
+        border-color: rgba(0, 212, 255, 0.25);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 255, 0.08), inset 0 1px 0 rgba(0, 212, 255, 0.08);
+    }
+
+    /* Neon pulse animation */
+    .animate-neon-pulse {
+        animation: neon-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes neon-pulse {
+        0%, 100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
+        50%       { box-shadow: 0 0 25px rgba(0, 212, 255, 0.5), 0 0 50px rgba(0, 212, 255, 0.2); }
+    }
+
+    /* Scanline effect (très subtil, optionnel) */
+    .scanlines {
+        background-image: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.03) 2px,
+            rgba(0, 0, 0, 0.03) 4px
+        );
+    }
+
+    /* ── Cyberpunk password page animations ── */
+
+    /* Neon flicker pour le titre mAIster */
+    .animate-neon-flicker {
+        animation: neon-flicker 5s ease-in-out infinite;
+        color: #00d4ff;
+    }
+
+    @keyframes neon-flicker {
+        0%, 100% {
+            text-shadow:
+                0 0 6px rgba(0, 212, 255, 0.6),
+                0 0 14px rgba(0, 212, 255, 0.3);
+            opacity: 1;
+        }
+        50% {
+            text-shadow:
+                0 0 10px rgba(0, 212, 255, 0.9),
+                0 0 24px rgba(0, 212, 255, 0.5),
+                0 0 40px rgba(0, 212, 255, 0.2);
+            opacity: 0.95;
+        }
+    }
+
+    /* Glitch subtle sur le mot KANBAN */
+    .animate-glitch {
+        animation: glitch 6s infinite;
+    }
+
+    @keyframes glitch {
+        0%, 90%, 100% {
+            transform: translate(0);
+            text-shadow: none;
+        }
+        91% {
+            transform: translate(-2px, 1px);
+            text-shadow: 2px 0 #ff006e;
+        }
+        92% {
+            transform: translate(2px, -1px);
+            text-shadow: -2px 0 #00d4ff;
+        }
+        93% {
+            transform: translate(0);
+            text-shadow: none;
+        }
+        94% {
+            transform: translate(1px, 2px);
+            text-shadow: -1px 0 #ff006e;
+        }
+        95% {
+            transform: translate(0);
+            text-shadow: none;
+        }
+    }
+
+    /* Scan line qui descend sur la page */
+    .scan-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
+        animation: scan-sweep 6s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes scan-sweep {
+        0%   { top: -2px; opacity: 0; }
+        5%   { opacity: 1; }
+        95%  { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+
+    /* Pulse pour le bouton ACCÉDER */
+    .animate-btn-pulse {
+        animation: btn-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes btn-pulse {
+        0%, 100% {
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.3), 0 0 20px rgba(0, 255, 136, 0.1);
+        }
+        50% {
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.25);
+        }
+    }
+
+    /* Text glow rose/pink */
+    .text-glow-pink {
+        text-shadow: 0 0 10px rgba(255, 0, 110, 0.7), 0 0 20px rgba(255, 0, 110, 0.4);
+    }
+}
