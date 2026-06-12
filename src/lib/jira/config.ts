@@ -35,6 +35,15 @@ export function isJiraConfigured(): boolean {
   return requiredVars.every((v) => !!process.env[v])
 }
 
+/**
+ * True when JIRA_MANDAYS_SOURCE is explicitly set. Without a deliberate choice
+ * of time field, actual man-days are unreliable (e.g. nobody logs work), so the
+ * planned-vs-actual UI is hidden in live mode unless this returns true.
+ */
+export function isMandaysSourceConfigured(): boolean {
+  return !!process.env.JIRA_MANDAYS_SOURCE
+}
+
 let cachedConfig: JiraConfig | null = null
 
 export function getJiraConfig(): JiraConfig {

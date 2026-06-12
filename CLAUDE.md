@@ -51,7 +51,7 @@ src/
       budget.ts             — budget calculations; re-exports types from types/financial
       jh.ts                 — reads via data source; writes: demo=error, live=storage
       settings.ts           — getAppSettings/setShowBudgetTab
-      meta.ts               — getUiMeta(): { mode, brands, brandColors } for pages
+      meta.ts               — getUiMeta(): { mode, brands, brandColors, showPlannedVsActual }
     mock-data/              — deterministic generators (SeededRandom) — untouched API
     i18n/                   — EN/FR dictionaries (TranslationKey type) + useLanguage()
   types/
@@ -62,10 +62,10 @@ src/
 ## Key behaviors
 
 - **Canonical status pipeline** (KPI/rejection logic depends on these names): Backlog → In Progress → Review → IT Testing → QA Testing → Business Testing → Ready for Release → Done. Real Jira statuses are mapped via `JIRA_STATUS_MAPPING` (case-insensitive keys).
-- **dev_mandays** in live mode = `timespent` seconds / 28800 (override with `JIRA_MANDAYS_SOURCE=timeoriginalestimate`).
+- **dev_mandays** in live mode = `timespent` seconds / 28800 (override with `JIRA_MANDAYS_SOURCE=timeoriginalestimate`). The dashboard's "Planned vs Actual (Dev)" chart and "Actual / Planned" card are gated by `DataSource.hasMandaysSource()` (→ `UiMeta.showPlannedVsActual`): always shown in demo, shown in live only when `JIRA_MANDAYS_SOURCE` is explicitly set.
 - **Brands in live mode** = union of brand field values in tickets + brands in the financial store, sorted; colors auto-assigned from a palette. Charts use `var(--brand-<slug>, <fallback>)` so `globals.css` overrides still apply (e.g. `--brand-goog` is overridden to red there).
 - **Calendar bounds**: demo `{minYear: 2026, maxYear: 2026}`, live `null` (unrestricted) — via `DataSource.getCalendarBounds()`.
-- **Budget tab visibility**: admin toggle (live only; demo always shows it). Sidebar filters the nav item; `/budget` redirects when hidden.
+- **Budget tab visibility**: admin toggle (live only; demo always shows it). Sidebar filters the nav item; `/budget` redirects when hidden. The budget chart defaults to the weekly view (`?view=week` is the implicit default).
 
 ## Env vars
 

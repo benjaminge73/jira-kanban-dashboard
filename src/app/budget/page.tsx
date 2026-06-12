@@ -20,7 +20,7 @@ export default async function BudgetPage({
     if (!showBudgetTab) redirect("/dashboard")
 
     const params = await searchParams
-    const view = (typeof params.view === "string" ? params.view : "month") as "week" | "month"
+    const view = (typeof params.view === "string" ? params.view : "week") as "week" | "month"
     const from = typeof params.from === "string" ? params.from : undefined
     const to = typeof params.to === "string" ? params.to : undefined
     const forecast = params.forecast === "true"

@@ -35,4 +35,6 @@ export interface DataSource {
   getBrandColors(): Promise<Record<string, string>>
   /** Calendar limits for the date pickers; null = unrestricted. */
   getCalendarBounds(): CalendarBounds | null
+  /** Whether actual dev man-days have a trusted source (gates the planned-vs-actual UI). */
+  hasMandaysSource(): boolean
 }

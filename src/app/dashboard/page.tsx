@@ -90,8 +90,11 @@ export default async function DashboardPage({
     }, null)
     const leadTimeMoyen = doneRow?.Moyenne != null ? doneRow.Moyenne.toFixed(1) : "0"
 
-    // Planned vs Actual Chart Data
-    const chartData = await calculatePlannedVsActualData(tickets, fromStr, toStr, grouping);
+    // Planned vs Actual Chart Data — hidden when the data source has no trusted man-days source
+    const showPlannedVsActual = meta.showPlannedVsActual
+    const chartData = showPlannedVsActual
+        ? await calculatePlannedVsActualData(tickets, fromStr, toStr, grouping)
+        : [];
 
     // Réel / Prévu as percentage from chart data
     let totalPlanned = 0, totalActual = 0
@@ -144,15 +147,17 @@ export default async function DashboardPage({
         }
 
         // Past réel/prévu
-        const pastChartData = await calculatePlannedVsActualData(tickets, pastFrom, pastTo, grouping)
-        let pastPlanned = 0, pastActual = 0
-        for (const point of pastChartData) {
-            for (const brand of brands) {
-                pastPlanned += (point[`${brand}_planned`] as number) || 0
-                pastActual += (point[`${brand}_actual`] as number) || 0
+        if (showPlannedVsActual) {
+            const pastChartData = await calculatePlannedVsActualData(tickets, pastFrom, pastTo, grouping)
+            let pastPlanned = 0, pastActual = 0
+            for (const point of pastChartData) {
+                for (const brand of brands) {
+                    pastPlanned += (point[`${brand}_planned`] as number) || 0
+                    pastActual += (point[`${brand}_actual`] as number) || 0
+                }
             }
+            pastReelPrevuPct = pastPlanned > 0 ? (pastActual / pastPlanned) * 100 : null
         }
-        pastReelPrevuPct = pastPlanned > 0 ? (pastActual / pastPlanned) * 100 : null
 
         // Calculate variants based on trends
         if (pastTotalTickets !== null) {
@@ -186,7 +191,7 @@ export default async function DashboardPage({
         <div className="p-8 space-y-8">
             <PageHeader titleKey="dashboard.title" subtitleKey="dashboard.subtitle" />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className={`grid gap-6 md:grid-cols-2 ${showPlannedVsActual ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
                 <TrendMetricCard
                     titleKey="dashboard.completedTickets"
                     value={totalTickets.toString()}
@@ -208,14 +213,16 @@ export default async function DashboardPage({
                     higherIsBetter={true}
                     variant={spVariant}
                 />
-                <TrendMetricCard
-                    titleKey="dashboard.actualVsPlanned"
-                    value={reelPrevuPct !== null ? `${reelPrevuPct.toFixed(0)}%` : "N/A"}
-                    currentPct={reelPrevuPct}
-                    pastPct={pastReelPrevuPct}
-                    higherIsBetter={false}
-                    isColoredCard={true}
-                />
+                {showPlannedVsActual && (
+                    <TrendMetricCard
+                        titleKey="dashboard.actualVsPlanned"
+                        value={reelPrevuPct !== null ? `${reelPrevuPct.toFixed(0)}%` : "N/A"}
+                        currentPct={reelPrevuPct}
+                        pastPct={pastReelPrevuPct}
+                        higherIsBetter={false}
+                        isColoredCard={true}
+                    />
+                )}
             </div>
 
             <div className="mt-8 grid gap-8">
@@ -255,48 +262,50 @@ export default async function DashboardPage({
                     </div>
                 </div>
 
-                <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col">
-                    <div className="p-6 border-b border-border/50 bg-muted/20">
-                        <div className="flex w-full justify-between items-start">
-                            <div>
-                                <h3 className="text-xl font-bold"><TranslatedText k="dashboard.plannedVsActual" /></h3>
-                                <p className="text-sm text-muted-foreground mt-1"><TranslatedText k="dashboard.plannedVsActualDesc" /></p>
-                            </div>
-                            {liveDataBadge}
-                        </div>
-
-                        <div className="flex items-center justify-between mt-4">
-                            <VelocityGroupingSelector currentGrouping={grouping} />
-                        </div>
-
-                        <div className="mt-4 bg-background/50 rounded-lg p-3 text-sm text-muted-foreground border border-border/50">
-                            <details className="group cursor-pointer">
-                                <summary className="font-medium text-foreground flex items-center justify-between outline-none">
-                                    <span className="flex items-center gap-2">💡 <TranslatedText k="dashboard.howToRead" /></span>
-                                    <span className="transition group-open:rotate-180">↓</span>
-                                </summary>
-                                <div className="mt-3 space-y-2 pl-2 border-l-2 border-primary/50 text-sm">
-                                    <p className="mb-2 text-foreground"><TranslatedText k="dashboard.howToReadPva1" /></p>
-                                    <ul className="list-disc pl-5 space-y-1">
-                                        <li><TranslatedText k="dashboard.hatchedBars" /></li>
-                                        <li><TranslatedText k="dashboard.solidBars" /></li>
-                                        <li><TranslatedText k="dashboard.exclusion" /></li>
-                                    </ul>
+                {showPlannedVsActual && (
+                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col">
+                        <div className="p-6 border-b border-border/50 bg-muted/20">
+                            <div className="flex w-full justify-between items-start">
+                                <div>
+                                    <h3 className="text-xl font-bold"><TranslatedText k="dashboard.plannedVsActual" /></h3>
+                                    <p className="text-sm text-muted-foreground mt-1"><TranslatedText k="dashboard.plannedVsActualDesc" /></p>
                                 </div>
-                            </details>
+                                {liveDataBadge}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-4">
+                                <VelocityGroupingSelector currentGrouping={grouping} />
+                            </div>
+
+                            <div className="mt-4 bg-background/50 rounded-lg p-3 text-sm text-muted-foreground border border-border/50">
+                                <details className="group cursor-pointer">
+                                    <summary className="font-medium text-foreground flex items-center justify-between outline-none">
+                                        <span className="flex items-center gap-2">💡 <TranslatedText k="dashboard.howToRead" /></span>
+                                        <span className="transition group-open:rotate-180">↓</span>
+                                    </summary>
+                                    <div className="mt-3 space-y-2 pl-2 border-l-2 border-primary/50 text-sm">
+                                        <p className="mb-2 text-foreground"><TranslatedText k="dashboard.howToReadPva1" /></p>
+                                        <ul className="list-disc pl-5 space-y-1">
+                                            <li><TranslatedText k="dashboard.hatchedBars" /></li>
+                                            <li><TranslatedText k="dashboard.solidBars" /></li>
+                                            <li><TranslatedText k="dashboard.exclusion" /></li>
+                                        </ul>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div className="h-[450px] w-full p-6">
+                            {chartData.length > 0 ? (
+                                <VelocityChart data={chartData} brands={brands} brandColors={meta.brandColors} />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center border-2 border-dashed rounded-lg opacity-50">
+                                    <TranslatedText k="dashboard.noData" />
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    <div className="h-[450px] w-full p-6">
-                        {chartData.length > 0 ? (
-                            <VelocityChart data={chartData} brands={brands} brandColors={meta.brandColors} />
-                        ) : (
-                            <div className="h-full w-full flex items-center justify-center border-2 border-dashed rounded-lg opacity-50">
-                                <TranslatedText k="dashboard.noData" />
-                            </div>
-                        )}
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );
