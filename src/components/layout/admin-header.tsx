@@ -2,11 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { PenLine, ShieldCheck } from "lucide-react"
+import { AlertTriangle, LogOut, PenLine, ShieldCheck } from "lucide-react"
+import { logoutAdmin } from "@/lib/actions/auth"
 import { useLanguage } from "@/lib/i18n/context"
 import type { AppMode } from "@/lib/data-source/types"
 
-export function AdminHeader({ mode }: { mode: AppMode }) {
+export function AdminHeader({ mode, authEnabled = false, warnNoPassword = false }: {
+    mode: AppMode
+    /** True when ADMIN_PASSWORD protects the admin area (shows the logout button). */
+    authEnabled?: boolean
+    /** True in live mode without ADMIN_PASSWORD: writes are unprotected. */
+    warnNoPassword?: boolean
+}) {
     const pathname = usePathname()
     const { t } = useLanguage()
 
@@ -21,13 +28,31 @@ export function AdminHeader({ mode }: { mode: AppMode }) {
                     <ShieldCheck className="h-5 w-5 text-muted-foreground" />
                     <h1 className="text-2xl font-bold tracking-tight">{t("admin.administration")}</h1>
                 </div>
-                <span
-                    className="text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded"
-                    style={{ background: "rgba(0,212,255,0.08)", color: "rgba(0,212,255,0.6)", border: "1px solid rgba(0,212,255,0.2)" }}
-                >
-                    {t(mode === "live" ? "admin.liveBadge" : "admin.demoBadge")}
-                </span>
+                <div className="flex items-center gap-3">
+                    <span
+                        className="text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded"
+                        style={{ background: "rgba(0,212,255,0.08)", color: "rgba(0,212,255,0.6)", border: "1px solid rgba(0,212,255,0.2)" }}
+                    >
+                        {t(mode === "live" ? "admin.liveBadge" : "admin.demoBadge")}
+                    </span>
+                    {authEnabled && (
+                        <button
+                            onClick={() => logoutAdmin()}
+                            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors border rounded px-2.5 py-1"
+                        >
+                            <LogOut className="h-3.5 w-3.5" />
+                            {t("admin.logout")}
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {warnNoPassword && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-sm">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <span className="text-muted-foreground">{t("admin.noPasswordWarning")}</span>
+                </div>
+            )}
 
             <nav className="flex gap-1 pb-4">
                 {adminTabs.map((tab) => {

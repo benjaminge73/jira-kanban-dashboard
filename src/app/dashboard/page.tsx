@@ -2,8 +2,20 @@ import { VelocityChart } from "@/components/dashboard/velocity-chart"
 import { VelocityGroupingSelector } from "@/components/dashboard/velocity-grouping-selector"
 import { TimeStatusChart } from "@/components/dashboard/time-status-chart"
 import { TrendMetricCard } from "@/components/dashboard/trend-metric-card"
+import { AgingWipChart } from "@/components/dashboard/aging-wip-chart"
+import { ThroughputChart } from "@/components/dashboard/throughput-chart"
+import { ForecastTable } from "@/components/dashboard/forecast-table"
 import { fetchAllTickets, fetchAllTransitions, calculateTimeSpentPerStatus, calculatePlannedVsActualData } from "@/lib/actions/kpis"
 import { getUiMeta } from "@/lib/actions/meta"
+import { isDoneStatus } from "@/lib/flow/statuses"
+import {
+    computeAgingWip,
+    computeCycleTimes,
+    computeWeeklyThroughput,
+    cycleTimeStats,
+    monteCarloForecast,
+    throughputHistory,
+} from "@/lib/flow/metrics"
 import { PageHeader, TranslatedText } from "@/components/layout/page-header"
 
 export const revalidate = 0 // Disable cache for dashboard
@@ -24,7 +36,6 @@ export default async function DashboardPage({
     const transitions = await fetchAllTransitions()
 
     // Filter tickets by period for metrics
-    const doneStatuses = ["Done", "Ready for Release", "done", "ready for release"]
     let periodTickets = tickets
     if (fromStr) {
         const fromDate = new Date(fromStr).getTime()
@@ -35,9 +46,25 @@ export default async function DashboardPage({
         periodTickets = periodTickets.filter(t => t.resolution_date && new Date(t.resolution_date).getTime() <= toDate)
     }
 
-    const periodDoneTickets = periodTickets.filter(t => doneStatuses.includes(t.status) || doneStatuses.includes(t.status.toLowerCase()))
+    const periodDoneTickets = periodTickets.filter(t => isDoneStatus(t.status))
     const totalTickets = periodDoneTickets.length
     const totalStoryPoints = periodDoneTickets.reduce((acc, t) => acc + (t.dev_estimation || 0), 0)
+
+    // Cycle time (work start → delivery, working days) for the selected period
+    const cycleEntries = computeCycleTimes(tickets, transitions, { from: fromStr, to: toStr })
+    const cycle = cycleTimeStats(cycleEntries)
+
+    // Aging WIP: current in-progress tickets vs all-time cycle time percentiles
+    const now = new Date()
+    const aging = computeAgingWip(tickets, transitions, now)
+    const historicalCycle = (fromStr || toStr)
+        ? cycleTimeStats(computeCycleTimes(tickets, transitions))
+        : cycle
+
+    // Throughput run chart + Monte Carlo forecast (history of completed weeks)
+    const throughputData = computeWeeklyThroughput(tickets, brands, { from: fromStr, to: toStr })
+    const history = throughputHistory(tickets, now)
+    const forecastRows = history.length >= 4 ? monteCarloForecast(history, [2, 4, 8]) : []
 
     // 2. Prepare Chart Data
     // Time Status Data
@@ -81,15 +108,6 @@ export default async function DashboardPage({
         return ia - ib
     })
 
-    // Lead time moyen = somme des MOYENNE across all statuses (total pipeline time)
-    const doneRow = pivotTimeStatusData.find((d: any) => d.status === "Done") || pivotTimeStatusData.reduce((best: any, d: any) => {
-      if (!best) return d
-      const dMoy = d.Moyenne || 0
-      const bestMoy = best.Moyenne || 0
-      return dMoy > bestMoy ? d : best
-    }, null)
-    const leadTimeMoyen = doneRow?.Moyenne != null ? doneRow.Moyenne.toFixed(1) : "0"
-
     // Planned vs Actual Chart Data — hidden when the data source has no trusted man-days source
     const showPlannedVsActual = meta.showPlannedVsActual
     const chartData = showPlannedVsActual
@@ -108,13 +126,13 @@ export default async function DashboardPage({
 
     // Past period comparison: compute the equivalent past period
     let pastTotalTickets: number | null = null
-    let pastLeadTimeMoyen: string | null = null
+    let pastCycleP50: number | null = null
     let pastTotalStoryPoints: number | null = null
     let pastReelPrevuPct: number | null = null
 
     // Variants for cards based on trend
     let ticketsVariant: "default" | "success" | "danger" = "default"
-    let leadTimeVariant: "default" | "success" | "danger" = "default"
+    let cycleVariant: "default" | "success" | "danger" = "default"
     let spVariant: "default" | "success" | "danger" = "default"
 
     if (fromStr && toStr) {
@@ -131,20 +149,14 @@ export default async function DashboardPage({
             t.resolution_date &&
             new Date(t.resolution_date).getTime() >= pastFromMs &&
             new Date(t.resolution_date).getTime() <= pastToMs &&
-            (doneStatuses.includes(t.status) || doneStatuses.includes(t.status.toLowerCase()))
+            isDoneStatus(t.status)
         )
         pastTotalTickets = pastPeriodDoneTickets.length
         pastTotalStoryPoints = pastPeriodDoneTickets.reduce((acc, t) => acc + (t.dev_estimation || 0), 0)
 
-        // Past lead time
-        const pastRawTimeStatusData = await calculateTimeSpentPerStatus(tickets, transitions, pastFrom, pastTo)
-        const pastDoneRows = pastRawTimeStatusData.filter((d: any) =>
-            d.status === "Done" && brands.includes(d.brand)
-        )
-        if (pastDoneRows.length > 0) {
-            const totalDays = pastDoneRows.reduce((acc: number, d: any) => acc + d.days, 0)
-            pastLeadTimeMoyen = (totalDays / pastDoneRows.length).toFixed(1)
-        }
+        // Past cycle time
+        const pastCycle = cycleTimeStats(computeCycleTimes(tickets, transitions, { from: pastFrom, to: pastTo }))
+        pastCycleP50 = pastCycle.p50
 
         // Past réel/prévu
         if (showPlannedVsActual) {
@@ -165,14 +177,10 @@ export default async function DashboardPage({
             ticketsVariant = ticketsDelta > 0.5 ? "success" : ticketsDelta < -0.5 ? "danger" : "default"
         }
 
-        if (pastLeadTimeMoyen) {
-            const currentLt = parseFloat(leadTimeMoyen)
-            const pastLt = parseFloat(pastLeadTimeMoyen)
-            if (!isNaN(currentLt) && !isNaN(pastLt)) {
-                const ltDelta = currentLt - pastLt
-                // Lower is better for lead time
-                leadTimeVariant = ltDelta < -0.5 ? "success" : ltDelta > 0.5 ? "danger" : "default"
-            }
+        if (cycle.p50 !== null && pastCycleP50 !== null) {
+            const cycleDelta = cycle.p50 - pastCycleP50
+            // Lower is better for cycle time
+            cycleVariant = cycleDelta < -0.5 ? "success" : cycleDelta > 0.5 ? "danger" : "default"
         }
 
         if (pastTotalStoryPoints !== null) {
@@ -191,7 +199,7 @@ export default async function DashboardPage({
         <div className="p-8 space-y-8">
             <PageHeader titleKey="dashboard.title" subtitleKey="dashboard.subtitle" />
 
-            <div className={`grid gap-6 md:grid-cols-2 ${showPlannedVsActual ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+            <div className={`grid gap-6 md:grid-cols-2 ${showPlannedVsActual ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"}`}>
                 <TrendMetricCard
                     titleKey="dashboard.completedTickets"
                     value={totalTickets.toString()}
@@ -200,11 +208,19 @@ export default async function DashboardPage({
                     variant={ticketsVariant}
                 />
                 <TrendMetricCard
-                    titleKey="dashboard.avgLeadTime"
-                    value={`${leadTimeMoyen} j`}
-                    pastValue={pastLeadTimeMoyen}
+                    titleKey="dashboard.cycleTime"
+                    value={cycle.p50 !== null ? `${cycle.p50} j` : "N/A"}
+                    subtitle={cycle.p85 !== null ? `P85 : ${cycle.p85} j` : undefined}
+                    pastValue={pastCycleP50 !== null ? pastCycleP50.toString() : null}
+                    tooltip={<TranslatedText k="dashboard.cycleTimeTooltip" />}
                     higherIsBetter={false}
-                    variant={leadTimeVariant}
+                    variant={cycleVariant}
+                />
+                <TrendMetricCard
+                    titleKey="dashboard.wip"
+                    value={aging.wipCount.toString()}
+                    tooltip={<TranslatedText k="dashboard.wipTooltip" />}
+                    higherIsBetter={false}
                 />
                 <TrendMetricCard
                     titleKey="dashboard.storyPoints"
@@ -259,6 +275,78 @@ export default async function DashboardPage({
                                 <TranslatedText k="dashboard.noTransitionData" />
                             </div>
                         )}
+                    </div>
+                </div>
+
+                <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col">
+                    <div className="p-6 border-b border-border/50 bg-muted/20">
+                        <div className="flex w-full justify-between items-start">
+                            <div>
+                                <h3 className="text-xl font-bold"><TranslatedText k="dashboard.agingWip" /></h3>
+                                <p className="text-sm text-muted-foreground mt-1"><TranslatedText k="dashboard.agingWipDesc" /></p>
+                            </div>
+                            {liveDataBadge}
+                        </div>
+
+                        <div className="mt-4 bg-background/50 rounded-lg p-3 text-sm text-muted-foreground border border-border/50">
+                            <details className="group cursor-pointer">
+                                <summary className="font-medium text-foreground flex items-center justify-between outline-none">
+                                    <span className="flex items-center gap-2">💡 <TranslatedText k="dashboard.howToRead" /></span>
+                                    <span className="transition group-open:rotate-180">↓</span>
+                                </summary>
+                                <div className="mt-3 space-y-2 pl-2 border-l-2 border-primary/50 text-sm">
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li><TranslatedText k="dashboard.agingDots" /></li>
+                                        <li><TranslatedText k="dashboard.agingBands" /></li>
+                                        <li><TranslatedText k="dashboard.agingAction" /></li>
+                                    </ul>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div className="h-[450px] w-full p-6">
+                        {aging.items.length > 0 ? (
+                            <AgingWipChart
+                                items={aging.items}
+                                p50={historicalCycle.p50}
+                                p85={historicalCycle.p85}
+                                brands={brands}
+                                brandColors={meta.brandColors}
+                            />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center border-2 border-dashed rounded-lg opacity-50">
+                                <TranslatedText k="dashboard.noWip" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col">
+                    <div className="p-6 border-b border-border/50 bg-muted/20">
+                        <div className="flex w-full justify-between items-start">
+                            <div>
+                                <h3 className="text-xl font-bold"><TranslatedText k="dashboard.throughputTitle" /></h3>
+                                <p className="text-sm text-muted-foreground mt-1"><TranslatedText k="dashboard.throughputDesc" /></p>
+                            </div>
+                            {liveDataBadge}
+                        </div>
+                    </div>
+
+                    <div className="h-[400px] w-full p-6">
+                        {throughputData.length > 0 ? (
+                            <ThroughputChart data={throughputData} brands={brands} brandColors={meta.brandColors} />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center border-2 border-dashed rounded-lg opacity-50">
+                                <TranslatedText k="dashboard.noData" />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="px-6 pb-6">
+                        <div className="border-t border-border/50 pt-5">
+                            <ForecastTable rows={forecastRows} historyWeeks={history.length} />
+                        </div>
                     </div>
                 </div>
 

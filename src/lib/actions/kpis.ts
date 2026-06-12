@@ -3,23 +3,15 @@
 import { isWeekend, eachDayOfInterval, getISOWeek, getYear, format } from "date-fns"
 import type { KanbanTicket, StatusTransition, BackflowKPIs } from "../../types/kanban"
 import { getDataSource } from "../data-source"
-
-// Note: Lightweight implementation of working days (weekends excluded).
-function getWorkingDaysCount(startDate: Date, endDate: Date): number {
-  if (endDate < startDate) return 0
-  const days = eachDayOfInterval({ start: startDate, end: endDate })
-  return days.filter((d) => !isWeekend(d)).length
-}
+import { isDoneStatus, statusRank } from "../flow/statuses"
+import { workingDaysBetween } from "../flow/metrics"
 
 export async function fetchTicketsByPeriod(startDate: string, endDate: string): Promise<KanbanTicket[]> {
   return getDataSource().getTicketsByPeriod(startDate, endDate)
 }
 
 export async function calculateVelocityDeltas(tickets: KanbanTicket[]) {
-  const doneStatuses = ["Done", "Ready for Release", "done", "ready for release"]
-  const doneTickets = tickets.filter((t) =>
-    doneStatuses.includes(t.status) || doneStatuses.includes(t.status.toLowerCase())
-  )
+  const doneTickets = tickets.filter((t) => isDoneStatus(t.status))
 
   return doneTickets.map((ticket) => {
     const deltaJh = ticket.dev_mandays - ticket.dev_estimation
@@ -33,7 +25,7 @@ export async function calculateBudgetProrata(billedDays: number, startDateStr: s
   const startDate = parseISO(startDateStr)
   const endDate = parseISO(endDateStr)
 
-  const workingDays = getWorkingDaysCount(startDate, endDate)
+  const workingDays = workingDaysBetween(startDate, endDate)
   if (workingDays <= 0) return []
 
   const dailyRate = billedDays / workingDays
@@ -73,10 +65,7 @@ export async function calculateTimeSpentPerStatus(
 
   const records: any[] = []
 
-  const doneStatuses = ["Done", "Ready for Release", "done", "ready for release"]
-  let doneTickets = tickets.filter(
-    (t) => doneStatuses.includes(t.status) || doneStatuses.includes(t.status.toLowerCase())
-  )
+  let doneTickets = tickets.filter((t) => isDoneStatus(t.status))
 
   if (fromStr) {
     const fromDate = new Date(fromStr).getTime()
@@ -133,7 +122,7 @@ export async function calculateTimeSpentPerStatus(
         if (exit) {
           const exitTime = new Date(exit.transition_date)
           const entryDate = new Date(entry.transition_date)
-          const days = getWorkingDaysCount(entryDate, exitTime)
+          const days = workingDaysBetween(entryDate, exitTime)
           totalDays += days
           count++
         }
@@ -161,8 +150,7 @@ export async function calculateBackflow(
   const brandStats: Record<string, any> = {}
   const rejectionsDetail: BackflowKPIs["rejections_detail_by_brand"] = {}
 
-  const targetStatuses = ["done", "ready for release"]
-  const targetTickets = tickets.filter((t) => targetStatuses.includes(t.status.toLowerCase()))
+  const targetTickets = tickets.filter((t) => isDoneStatus(t.status))
 
   const keys = new Set(targetTickets.map((t) => t.issue_key))
   const filteredTransitions = transitions.filter((t) => keys.has(t.issue_key))
@@ -199,19 +187,6 @@ export async function calculateBackflow(
     brandStats[brand].total_points += points
     brandStats[brand].total_mandays += mandays
 
-    const getStatusIndex = (status: string) => {
-      const s = status.toLowerCase()
-      if (["backlog", "to do", "open"].includes(s)) return 0
-      if (["in progress", "to fix", "reopened", "refinement"].includes(s)) return 1
-      if (["review"].includes(s)) return 2
-      if (["it testing", "testing qual-it", "testing qual it"].includes(s)) return 3
-      if (["qa testing", "testing qual-bu", "testing qual bu"].includes(s)) return 4
-      if (["business testing", "validating on staging"].includes(s)) return 5
-      if (["ready for release"].includes(s)) return 6
-      if (["done", "canceled", "closed"].includes(s)) return 7
-      return -1
-    }
-
     const ticketRejections: {
       status: string
       from_status: string
@@ -228,8 +203,8 @@ export async function calculateBackflow(
       if (["ready for release", "canceled"].includes(f)) continue
       if (f === t) continue
 
-      const fIndex = getStatusIndex(f)
-      const tIndex = getStatusIndex(t)
+      const fIndex = statusRank(f)
+      const tIndex = statusRank(t)
 
       let category: "Dev" | "QA" | "Business" | null = null
 
@@ -306,19 +281,6 @@ export async function calculatePeriodRejections(
 
     if (!rejectionsDetail[brand]) rejectionsDetail[brand] = []
 
-    const getStatusIndex = (status: string) => {
-      const s = status.toLowerCase()
-      if (["backlog", "to do", "open"].includes(s)) return 0
-      if (["in progress", "to fix", "reopened", "refinement"].includes(s)) return 1
-      if (["review"].includes(s)) return 2
-      if (["it testing", "testing qual-it", "testing qual it"].includes(s)) return 3
-      if (["qa testing", "testing qual-bu", "testing qual bu"].includes(s)) return 4
-      if (["business testing", "validating on staging"].includes(s)) return 5
-      if (["ready for release"].includes(s)) return 6
-      if (["done", "canceled", "closed"].includes(s)) return 7
-      return -1
-    }
-
     const ticketRejections: {
       status: string
       from_status: string
@@ -333,8 +295,8 @@ export async function calculatePeriodRejections(
       if (["ready for release", "canceled"].includes(f)) continue
       if (f === t) continue
 
-      const fIndex = getStatusIndex(f)
-      const tIndex = getStatusIndex(t)
+      const fIndex = statusRank(f)
+      const tIndex = statusRank(t)
 
       let category: "Dev" | "QA" | "Business" | null = null
 
@@ -402,10 +364,7 @@ export async function calculatePlannedVsActualData(
   toStr?: string,
   grouping: "week" | "month" | "all" = "all"
 ): Promise<VelocityData[]> {
-  const doneStatuses = ["Done", "Ready for Release", "done", "ready for release"]
-  let doneTickets = tickets.filter(
-    (t) => doneStatuses.includes(t.status) || doneStatuses.includes(t.status.toLowerCase())
-  )
+  let doneTickets = tickets.filter((t) => isDoneStatus(t.status))
 
   doneTickets = doneTickets.filter((t) => t.dev_mandays > 0)
 

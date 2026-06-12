@@ -1,19 +1,22 @@
 "use client"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useLanguage } from "@/lib/i18n/context"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
 type Grouping = "week" | "month" | "all"
 
-const options: { value: Grouping; label: string }[] = [
-    { value: "week", label: "Semaine" },
-    { value: "month", label: "Mois" },
-    { value: "all", label: "Période Globale" },
+const options: { value: Grouping; labelKey: TranslationKey }[] = [
+    { value: "week", labelKey: "common.week" },
+    { value: "month", labelKey: "common.month" },
+    { value: "all", labelKey: "common.allPeriod" },
 ]
 
 export function VelocityGroupingSelector({ currentGrouping }: { currentGrouping: Grouping }) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const { t } = useLanguage()
 
     function handleClick(value: Grouping) {
         const params = new URLSearchParams(searchParams.toString())
@@ -36,7 +39,7 @@ export function VelocityGroupingSelector({ currentGrouping }: { currentGrouping:
                         : "text-muted-foreground hover:text-foreground"
                         }`}
                 >
-                    {opt.label}
+                    {t(opt.labelKey)}
                 </button>
             ))}
         </div>

@@ -35,6 +35,32 @@ export function isJiraConfigured(): boolean {
   return requiredVars.every((v) => !!process.env[v])
 }
 
+/** Names (never values) of the required live-mode variables that are unset. */
+export function getMissingJiraVars(): string[] {
+  return requiredVars.filter((v) => !process.env[v])
+}
+
+let warnedPartialConfig = false
+
+/**
+ * Detects a half-configured Jira setup (some but not all required variables
+ * set): the app silently runs in demo mode in that case, which is easy to
+ * mistake for real data. Returns the missing variable names (empty when the
+ * config is complete or fully absent) and logs a warning once.
+ */
+export function getPartialJiraConfigWarning(): string[] {
+  const missing = getMissingJiraVars()
+  if (missing.length === 0 || missing.length === requiredVars.length) return []
+  if (!warnedPartialConfig) {
+    warnedPartialConfig = true
+    console.warn(
+      `[jira] Partial Jira configuration: missing ${missing.join(", ")} — falling back to DEMO mode. ` +
+        `Set all required variables to enable live mode (see .env.example).`
+    )
+  }
+  return missing
+}
+
 /**
  * True when JIRA_MANDAYS_SOURCE is explicitly set. Without a deliberate choice
  * of time field, actual man-days are unreliable (e.g. nobody logs work), so the

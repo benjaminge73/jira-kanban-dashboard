@@ -14,15 +14,18 @@ export const translations = {
 
     // Dashboard page
     "dashboard.title": "Flow",
-    "dashboard.subtitle": "Lead Time, time per status and Planned vs Actual comparison.",
+    "dashboard.subtitle": "Cycle time, time per status, throughput and forecast.",
     "dashboard.completedTickets": "Completed Tickets",
-    "dashboard.avgLeadTime": "Average Lead Time",
+    "dashboard.cycleTime": "Median Cycle Time",
+    "dashboard.cycleTimeTooltip": "Working days from the first entry into the active pipeline (In Progress) to completion (Done / Ready for Release). P50 = half of the tickets finish faster; P85 = 85% finish faster.",
+    "dashboard.wip": "Work In Progress",
+    "dashboard.wipTooltip": "Tickets currently between In Progress and Business Testing.",
     "dashboard.storyPoints": "Story Points",
     "dashboard.actualVsPlanned": "Actual / Planned",
     "dashboard.timePerStatus": "Time Spent per Status",
     "dashboard.timePerStatusDesc": "Average time spent in each status (working days)",
     "dashboard.howToRead": "How to read this chart?",
-    "dashboard.howToReadBody1": "Lines show the cumulative lead time as tickets progress through each pipeline stage — each point is the total time spent from the start of the pipeline up to and including that status.",
+    "dashboard.howToReadBody1": "Lines show the cumulative elapsed time as tickets progress through each pipeline stage — each point is the total time spent from the start of the pipeline up to and including that status.",
     "dashboard.howToReadBody2": "Cohort: only completed (\"Done\") tickets {period}are counted. This ensures data is not skewed by tickets stuck in progress.",
     "dashboard.howToReadBody3": "Hover over any status to see the average time spent exclusively in that stage (in working days).",
     "dashboard.plannedVsActual": "Planned vs Actual (Dev)",
@@ -157,6 +160,45 @@ export const translations = {
     // Data source badges
     "dashboard.demoData": "Demo Data",
     "sidebar.liveMode": "Live Mode",
+
+    // Aging WIP
+    "dashboard.agingWip": "Aging WIP",
+    "dashboard.agingWipDesc": "Age of each in-progress ticket (working days since work started)",
+    "dashboard.agingDots": "Each dot is an in-progress ticket — the higher, the older.",
+    "dashboard.agingBands": "Dashed lines: P50 / P85 of the historical cycle time. A ticket above the P85 line is already taking longer than 85% of past tickets.",
+    "dashboard.agingAction": "Tickets above P85 are your first candidates for the daily standup.",
+    "dashboard.noWip": "No work in progress.",
+
+    // Throughput + forecast
+    "dashboard.throughputTitle": "Weekly Throughput",
+    "dashboard.throughputDesc": "Tickets completed per week, by brand",
+    "dashboard.throughputTotal": "Total",
+    "dashboard.forecastTitle": "Monte Carlo Forecast",
+    "dashboard.forecastDesc": "based on the last {n} weeks of throughput",
+    "dashboard.forecastHorizon": "Horizon",
+    "dashboard.forecastConservative": "Likely (85%)",
+    "dashboard.forecastMedian": "Median (50%)",
+    "dashboard.forecastWeeks": "{n} weeks",
+    "dashboard.forecastInsufficient": "Not enough throughput history for a forecast (at least 4 completed weeks required).",
+
+    // Shared
+    "common.week": "Week",
+    "common.month": "Month",
+    "common.allPeriod": "Whole Period",
+    "common.daysShort": "wd",
+
+    // Partial Jira config banner
+    "config.partialTitle": "Incomplete Jira configuration — demo mode active.",
+    "config.partialBody": "Missing variables: {vars}. The data below is demo data, not your Jira project.",
+
+    // Admin auth
+    "admin.loginTitle": "Admin Access",
+    "admin.loginSubtitle": "Enter the admin password to continue.",
+    "admin.passwordPlaceholder": "Password",
+    "admin.signIn": "Sign In",
+    "admin.invalidPassword": "Invalid password.",
+    "admin.logout": "Log Out",
+    "admin.noPasswordWarning": "ADMIN_PASSWORD is not set — anyone who can reach this app can edit billed days and settings. Set it to protect the admin area.",
   },
 
   fr: {
@@ -172,15 +214,18 @@ export const translations = {
 
     // Dashboard page
     "dashboard.title": "Flux",
-    "dashboard.subtitle": "Lead Time, Temps par statut et comparaison Prévu vs Réel.",
+    "dashboard.subtitle": "Cycle time, temps par statut, throughput et prévision.",
     "dashboard.completedTickets": "Tickets terminés",
-    "dashboard.avgLeadTime": "Lead time moyen",
+    "dashboard.cycleTime": "Cycle time médian",
+    "dashboard.cycleTimeTooltip": "Jours ouvrés entre la première entrée dans le pipeline actif (In Progress) et la fin (Done / Ready for Release). P50 = la moitié des tickets finissent plus vite ; P85 = 85 % finissent plus vite.",
+    "dashboard.wip": "Travaux en cours (WIP)",
+    "dashboard.wipTooltip": "Tickets actuellement entre In Progress et Business Testing.",
     "dashboard.storyPoints": "Story Points",
     "dashboard.actualVsPlanned": "Réel / Prévu",
     "dashboard.timePerStatus": "Temps Passé par Statut",
     "dashboard.timePerStatusDesc": "Durée moyenne passée dans chaque statut (jours ouvrés)",
     "dashboard.howToRead": "Comment lire ce graphique ?",
-    "dashboard.howToReadBody1": "Les courbes montrent le lead time cumulé au fil des étapes du pipeline — chaque point représente le temps total écoulé depuis le début jusqu'à ce statut inclus.",
+    "dashboard.howToReadBody1": "Les courbes montrent le temps cumulé au fil des étapes du pipeline — chaque point représente le temps total écoulé depuis le début jusqu'à ce statut inclus.",
     "dashboard.howToReadBody2": "Cohorte stricte : Seuls les tickets terminés (\"Done\") {period}sont comptabilisés. Cela garantit que la donnée n'est pas faussée par des tickets restés bloqués.",
     "dashboard.howToReadBody3": "Au survol d'un statut, le tooltip affiche le temps moyen passé exclusivement dans cette étape (en jours ouvrés).",
     "dashboard.plannedVsActual": "Comparaison Prévu vs Réel (Dev)",
@@ -315,6 +360,45 @@ export const translations = {
     // Data source badges
     "dashboard.demoData": "Données de démo",
     "sidebar.liveMode": "Mode Live",
+
+    // Aging WIP
+    "dashboard.agingWip": "Âge des travaux en cours (Aging WIP)",
+    "dashboard.agingWipDesc": "Âge de chaque ticket en cours (jours ouvrés depuis le début du travail)",
+    "dashboard.agingDots": "Chaque point est un ticket en cours — plus il est haut, plus il est vieux.",
+    "dashboard.agingBands": "Lignes pointillées : P50 / P85 du cycle time historique. Un ticket au-dessus de la ligne P85 prend déjà plus de temps que 85 % des tickets passés.",
+    "dashboard.agingAction": "Les tickets au-dessus du P85 sont vos premiers candidats pour le daily.",
+    "dashboard.noWip": "Aucun ticket en cours.",
+
+    // Throughput + forecast
+    "dashboard.throughputTitle": "Throughput hebdomadaire",
+    "dashboard.throughputDesc": "Tickets terminés par semaine, par marque",
+    "dashboard.throughputTotal": "Total",
+    "dashboard.forecastTitle": "Prévision Monte Carlo",
+    "dashboard.forecastDesc": "basée sur le throughput des {n} dernières semaines",
+    "dashboard.forecastHorizon": "Horizon",
+    "dashboard.forecastConservative": "Probable (85 %)",
+    "dashboard.forecastMedian": "Médiane (50 %)",
+    "dashboard.forecastWeeks": "{n} semaines",
+    "dashboard.forecastInsufficient": "Historique de throughput insuffisant pour une prévision (au moins 4 semaines complètes requises).",
+
+    // Shared
+    "common.week": "Semaine",
+    "common.month": "Mois",
+    "common.allPeriod": "Période globale",
+    "common.daysShort": "j",
+
+    // Partial Jira config banner
+    "config.partialTitle": "Configuration Jira incomplète — mode démo actif.",
+    "config.partialBody": "Variables manquantes : {vars}. Les données ci-dessous sont des données de démo, pas votre projet Jira.",
+
+    // Admin auth
+    "admin.loginTitle": "Accès admin",
+    "admin.loginSubtitle": "Saisissez le mot de passe administrateur pour continuer.",
+    "admin.passwordPlaceholder": "Mot de passe",
+    "admin.signIn": "Se connecter",
+    "admin.invalidPassword": "Mot de passe invalide.",
+    "admin.logout": "Se déconnecter",
+    "admin.noPasswordWarning": "ADMIN_PASSWORD n'est pas défini — quiconque accède à l'application peut modifier les JH facturés et les réglages. Définissez cette variable pour protéger l'administration.",
   },
 } as const
 

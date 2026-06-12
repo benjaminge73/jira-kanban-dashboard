@@ -1,8 +1,10 @@
 "use server"
 
 import { getDataSource } from "../data-source"
-import { addDays, eachDayOfInterval, endOfMonth, format, getISOWeek, isWeekend, parseISO } from "date-fns"
+import { addDays, endOfMonth, format, getISOWeek, parseISO } from "date-fns"
 import type { BilledDayEntry, PlannedRate, BudgetChartPoint, DateRange } from "../../types/financial"
+import { getWorkingDaysInRange } from "../financial/working-days"
+import { deriveMonthlyFromWeekly } from "../financial/derive-monthly"
 
 export type { BilledDayEntry, PlannedRate, BudgetChartPoint, DateRange } from "../../types/financial"
 
@@ -21,21 +23,18 @@ export async function fetchPlannedRates(): Promise<PlannedRate[]> {
 }
 
 // -------------------------------------------------------------------
-// Working Days
+// Monthly data with weekly fallback
 // -------------------------------------------------------------------
 
-function getWorkingDaysInRange(startStr: string, endStr: string): number {
-    const start = parseISO(startStr)
-    const end = parseISO(endStr)
-    if (end < start) return 0
-    const days = eachDayOfInterval({ start, end })
-    return days.filter(d => {
-        if (isWeekend(d)) return false
-        const mm = d.getMonth() + 1
-        const dd = d.getDate()
-        if (mm === 1 && dd === 1) return false
-        return true
-    }).length
+// Monthly entries are authoritative when present; when a live user only fills
+// in the weekly grid, monthly figures are derived from it (boundary weeks are
+// split pro-rata on working days) so cards and the monthly chart stay populated.
+async function fetchMonthlyBilledWithFallback(dateRange?: DateRange): Promise<BilledDayEntry[]> {
+    const monthly = await fetchBilledDays("month", dateRange)
+    if (monthly.length > 0) return monthly
+    const weekly = await fetchBilledDays("week", dateRange)
+    if (weekly.length === 0) return monthly
+    return deriveMonthlyFromWeekly(weekly)
 }
 
 // -------------------------------------------------------------------
@@ -80,7 +79,9 @@ export async function calculateBudgetEvolution(
     dateRange?: DateRange,
     showForecast?: boolean
 ): Promise<BudgetChartPoint[]> {
-    const billedData = await fetchBilledDays(periodType, dateRange)
+    const billedData = periodType === "month"
+        ? await fetchMonthlyBilledWithFallback(dateRange)
+        : await fetchBilledDays(periodType, dateRange)
     const plannedRates = await fetchPlannedRates()
 
     if (billedData.length === 0) return []
@@ -230,7 +231,8 @@ async function calculateMetricsForPeriod(
 ) {
     // Always use monthly billed data for summary metrics: monthly entries are the authoritative
     // source and avoid boundary-week partial-counting issues that affect weekly totals.
-    const billedData = await fetchBilledDays("month", dateRange)
+    // Falls back to weekly-derived data when no monthly entry exists.
+    const billedData = await fetchMonthlyBilledWithFallback(dateRange)
     const plannedRates = await fetchPlannedRates()
 
     let totalBilled = 0

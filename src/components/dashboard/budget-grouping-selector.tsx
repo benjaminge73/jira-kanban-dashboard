@@ -1,18 +1,21 @@
 "use client"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useLanguage } from "@/lib/i18n/context"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
 type BudgetGrouping = "week" | "month"
 
-const options: { value: BudgetGrouping; label: string }[] = [
-    { value: "month", label: "Mois" },
-    { value: "week", label: "Semaine" },
+const options: { value: BudgetGrouping; labelKey: TranslationKey }[] = [
+    { value: "month", labelKey: "common.month" },
+    { value: "week", labelKey: "common.week" },
 ]
 
 export function BudgetGroupingSelector({ currentGrouping }: { currentGrouping: BudgetGrouping }) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const { t } = useLanguage()
 
     function handleClick(value: BudgetGrouping) {
         const params = new URLSearchParams(searchParams.toString())
@@ -31,7 +34,7 @@ export function BudgetGroupingSelector({ currentGrouping }: { currentGrouping: B
                         : "text-muted-foreground hover:text-foreground"
                         }`}
                 >
-                    {opt.label}
+                    {t(opt.labelKey)}
                 </button>
             ))}
         </div>
