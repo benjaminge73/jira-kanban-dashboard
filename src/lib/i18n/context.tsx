@@ -20,11 +20,14 @@ const STORAGE_KEY = "kanban-locale"
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en")
 
-  // Hydrate from localStorage once on mount
+  // Hydrate from localStorage once on mount. Deliberately an effect (not a lazy
+  // useState initializer): localStorage is unavailable during SSR, so reading it
+  // eagerly would desync the server-rendered locale from the client's stored one.
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
       if (stored === "fr" || stored === "en") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocaleState(stored)
       }
     } catch {}

@@ -32,7 +32,7 @@ export function TrendMetricCard({
     const { t } = useLanguage()
 
     let colorClass = "text-foreground";
-    let bgClass = "bg-card";
+    const bgClass = "bg-card";
 
     let trendLabel: string | null = null
     let trendIsGood: boolean | null = null

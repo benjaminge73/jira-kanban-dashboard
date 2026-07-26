@@ -8,7 +8,10 @@ const COLORS = {
     Business: "var(--brand-average, #f97316)" // Orange
 }
 
-function CustomTooltip({ active, payload }: any) {
+function CustomTooltip({ active, payload }: {
+    active?: boolean
+    payload?: { payload: { name: string; value: number; fill?: string } }[]
+}) {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
         return (

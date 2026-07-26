@@ -7,6 +7,7 @@ import { fr } from "date-fns/locale"
 import type { BackflowKPIs, GroupedRejectedTicket } from "@/types/kanban"
 import { getRejectionComments, type RejectionComment } from "@/lib/actions/kpis"
 import { useLanguage } from "@/lib/i18n/context"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
 interface QualityRejectionsDetailProps {
     data: BackflowKPIs["rejections_detail_by_brand"]
@@ -219,7 +220,7 @@ function QualityRejectionRow({
     accentBg: string
     accentBorder: string
     locale: string
-    t: (key: any) => string
+    t: (key: TranslationKey) => string
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isLoading, setIsLoading] = useState(false)

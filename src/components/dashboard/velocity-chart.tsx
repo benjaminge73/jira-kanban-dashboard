@@ -19,7 +19,15 @@ function parseName(name: string): { brand: string; type: "planned" | "actual" } 
     return { brand: name.slice(0, idx), type: name.slice(idx + 1) as "planned" | "actual" }
 }
 
-function CustomTooltip({ active, payload, label, plannedLabel, actualLabel, brands, brandColors }: any) {
+function CustomTooltip({ active, payload, label, plannedLabel, actualLabel, brands, brandColors }: {
+    active?: boolean
+    payload?: { dataKey: string; value: number; color: string }[]
+    label?: string
+    plannedLabel: string
+    actualLabel: string
+    brands: string[]
+    brandColors: Record<string, string>
+}) {
     if (!active || !payload || payload.length === 0) return null;
 
     const grouped: Record<string, { planned?: number; actual?: number; color: string }> = {};
@@ -29,7 +37,7 @@ function CustomTooltip({ active, payload, label, plannedLabel, actualLabel, bran
         grouped[brand][type] = entry.value;
     }
 
-    const sorted = (brands as string[]).filter(b => grouped[b]);
+    const sorted = brands.filter(b => grouped[b]);
 
     return (
         <div className="bg-card/95 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl min-w-[220px]">

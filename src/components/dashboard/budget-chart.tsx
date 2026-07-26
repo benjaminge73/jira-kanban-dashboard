@@ -22,6 +22,8 @@ interface BrandSeries {
     color: string
 }
 
+type TickProps = { x?: number | string; y?: number | string; payload?: { value: string } }
+
 const totalColor = "#f97316"
 
 // Extract "S09" from various label formats (S09 2026 / W09 2026 / Semaine 9)
@@ -37,7 +39,7 @@ function extractWeekShortLabel(raw: string): string {
 
 // Custom XAxis tick — "S09" at 12px + "24/02-02/03" at 10px (hidden if tight)
 function WeekTick({ x, y, payload, chartData, showDates }: {
-    x?: number; y?: number; payload?: { value: string }; chartData: BudgetChartPoint[]; showDates: boolean
+    x?: number | string; y?: number | string; payload?: { value: string }; chartData: BudgetChartPoint[]; showDates: boolean
 }) {
     const raw = payload?.value ?? ""
     const point = chartData.find(p => p.period === raw)
@@ -79,7 +81,7 @@ function WeekTick({ x, y, payload, chartData, showDates }: {
 }
 
 function MonthTick({ x, y, payload }: {
-    x?: number; y?: number; payload?: { value: string }
+    x?: number | string; y?: number | string; payload?: { value: string }
 }) {
     return (
         <g transform={`translate(${x ?? 0},${y ?? 0})`}>
@@ -96,7 +98,14 @@ function MonthTick({ x, y, payload }: {
     )
 }
 
-function CustomTooltip({ active, payload, label, billedLabel, plannedLabel, brandSeries }: any) {
+function CustomTooltip({ active, payload, label, billedLabel, plannedLabel, brandSeries }: {
+    active?: boolean
+    payload?: { dataKey: string; value: number }[]
+    label?: string
+    billedLabel: string
+    plannedLabel: string
+    brandSeries: BrandSeries[]
+}) {
     if (!active || !payload || payload.length === 0) return null
 
     const grouped: Record<string, { billed?: number; planned?: number }> = {}
@@ -107,9 +116,9 @@ function CustomTooltip({ active, payload, label, billedLabel, plannedLabel, bran
         if (type === "planned") grouped[brand].planned = entry.value
     }
 
-    const brandOrder = [...(brandSeries as BrandSeries[]).map(b => b.key), "Total"]
+    const brandOrder = [...brandSeries.map(b => b.key), "Total"]
     const colorMap: Record<string, string> = Object.fromEntries(
-        (brandSeries as BrandSeries[]).map(b => [b.key, b.color])
+        brandSeries.map(b => [b.key, b.color])
     )
     colorMap.Total = totalColor
 
@@ -270,8 +279,8 @@ export function BudgetChart({ data, view, brands, brandColors }: {
                             height={isWeekView ? (showDates ? 55 : 38) : 38}
                             interval={0}
                             tick={isWeekView
-                                ? (props: any) => <WeekTick {...props} chartData={data} showDates={showDates} />
-                                : (props: any) => <MonthTick {...props} />
+                                ? (props: TickProps) => <WeekTick {...props} chartData={data} showDates={showDates} />
+                                : (props: TickProps) => <MonthTick {...props} />
                             }
                         />
                         <YAxis

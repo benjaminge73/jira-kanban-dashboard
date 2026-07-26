@@ -28,4 +28,6 @@ export const mockDataSource: DataSource = {
   getBrandColors: async () => ({ ...BRAND_COLORS }),
   // Demo data covers 2026 only
   getCalendarBounds: () => ({ minYear: 2026, maxYear: 2026 }),
+  // Mock tickets always carry dev_mandays — the showcase shows everything
+  hasMandaysSource: () => true,
 }
