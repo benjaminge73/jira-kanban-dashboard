@@ -6,6 +6,7 @@
 
 import { revalidatePath } from "next/cache"
 import { getDataSource, isLiveMode } from "../data-source"
+import { isAdminAuthenticated } from "../auth/admin"
 import {
   deleteStoredBilledDay,
   deleteStoredBilledPeriod,
@@ -38,6 +39,9 @@ const DEMO_MESSAGE = "Demo mode — data is read-only."
 
 async function guardedWrite(write: () => Promise<void>): Promise<{ error?: string }> {
   if (!isLiveMode()) return { error: DEMO_MESSAGE }
+  // Server actions are publicly callable endpoints: enforce the admin
+  // session here, not only in the page/layout.
+  if (!(await isAdminAuthenticated())) return { error: "Unauthorized — please log in." }
   try {
     await write()
     revalidatePath("/", "layout")

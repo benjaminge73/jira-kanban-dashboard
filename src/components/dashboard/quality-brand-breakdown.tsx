@@ -8,10 +8,15 @@ function brandCssColor(brand: string, brandColors: Record<string, string>): stri
     return `var(--brand-${slug}, ${brandColors[brand] || "#999"})`
 }
 
-function CustomTooltip({ active, payload, label, brandColors }: any) {
+function CustomTooltip({ active, payload, label, brandColors }: {
+    active?: boolean
+    payload?: { value: number }[]
+    label?: string
+    brandColors: Record<string, string>
+}) {
     if (active && payload && payload.length) {
         const value = payload[0].value;
-        const brand = label;
+        const brand = label ?? "";
         return (
             <div className="bg-card/95 backdrop-blur-md border border-border p-3 rounded-xl shadow-2xl min-w-[150px]">
                 <div className="flex items-center gap-2 mb-1">

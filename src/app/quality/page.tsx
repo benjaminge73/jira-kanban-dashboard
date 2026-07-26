@@ -38,8 +38,8 @@ export default async function QualityPage({
     }
 
     // Filter tickets to only those that "completed" in the period
-    let fromDate = fromStr ? new Date(fromStr).getTime() : 0;
-    let toDate = toStr ? new Date(toStr).getTime() + 86400000 : Infinity;
+    const fromDate = fromStr ? new Date(fromStr).getTime() : 0;
+    const toDate = toStr ? new Date(toStr).getTime() + 86400000 : Infinity;
 
     const periodTickets = allTickets.filter(ticket => {
         if (!ticket.status || !targetStatuses.includes(ticket.status.toLowerCase())) return false;

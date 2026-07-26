@@ -5,6 +5,7 @@
 
 import type { BilledDayEntry, DateRange } from "../../types/financial"
 import { getJiraData, getJiraRejectionComments } from "../jira"
+import { isMandaysSourceConfigured } from "../jira/config"
 import { getStoredBilledDays, getStoredPlannedRates } from "../storage/financial-store"
 import type { DataSource } from "./types"
 
@@ -92,4 +93,8 @@ export const liveDataSource: DataSource = {
   },
 
   getCalendarBounds: () => null,
+
+  // Planned-vs-actual UI only makes sense when the operator explicitly chose
+  // which Jira time field feeds dev_mandays.
+  hasMandaysSource: () => isMandaysSourceConfigured(),
 }

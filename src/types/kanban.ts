@@ -44,6 +44,15 @@ export type GroupedRejectedTicket = {
     rejections: RejectionEvent[]
 }
 
+export type BrandRejectionStats = {
+    total_tickets: number
+    rejected_tickets: number
+    total_points: number
+    rejected_points: number
+    total_mandays: number
+    rejected_mandays: number
+}
+
 export type BackflowKPIs = {
     first_time_right_pct: number
     rejections_by_category: {
@@ -54,7 +63,7 @@ export type BackflowKPIs = {
     rejections_detail_by_brand: {
         [brand: string]: GroupedRejectedTicket[]
     }
-    brands: Record<string, any>
+    brands: Record<string, BrandRejectionStats>
     total_tickets: number
     tickets_with_rejection: number
 }

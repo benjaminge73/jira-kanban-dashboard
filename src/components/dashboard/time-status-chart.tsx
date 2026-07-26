@@ -36,6 +36,65 @@ function toCumulative(data: TimeStatusData[], seriesKeys: string[]): TimeStatusD
     })
 }
 
+type SeriesKey = { key: string; color: string }
+
+// Module-level component (not redefined per render): needs cumulativeData/seriesKeys/hiddenSeries
+// as props since it can no longer close over TimeStatusChart's render scope.
+function CustomTooltip({ active, label, cumulativeData, seriesKeys, hiddenSeries }: {
+    active?: boolean
+    label?: string
+    cumulativeData: TimeStatusData[]
+    seriesKeys: SeriesKey[]
+    hiddenSeries: Record<string, boolean>
+}) {
+    if (!active) return null
+
+    // Find the original per-status data for the hovered status
+    const originalPoint = cumulativeData.find(d => d.status === label)
+    if (!originalPoint) return null
+
+    // Build per-status display entries from the original (non-cumulative) values
+    const perStatusEntries = seriesKeys.map(({ key, color }) => ({
+        key,
+        color,
+        perStatus: originalPoint[`_${key}`] as number | null,
+    }))
+
+    // Only show visible, non-null entries, sorted by per-status value desc (average last)
+    const visible = perStatusEntries
+        .filter(e => !hiddenSeries[e.key] && e.perStatus !== null)
+        .sort((a, b) => {
+            if (a.key === AVERAGE_KEY) return 1
+            if (b.key === AVERAGE_KEY) return -1
+            return (b.perStatus ?? 0) - (a.perStatus ?? 0)
+        })
+
+    if (visible.length === 0) return null
+
+    return (
+        <div className="bg-card/95 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl min-w-[200px]"
+            style={{ borderColor: "rgba(0,212,255,0.15)" }}>
+            <p className="text-sm font-bold text-foreground mb-2 border-b border-border/50 pb-2">{label}</p>
+            <div className="space-y-1.5">
+                {visible.map(e => (
+                    <div key={e.key} className="flex items-center justify-between gap-6">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-3 h-3 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: e.color }} />
+                            <span className="text-xs font-semibold text-muted-foreground">{e.key}</span>
+                        </div>
+                        <div className="flex items-baseline gap-0.5">
+                            <span className="text-sm font-bold font-mono text-foreground">
+                                {Number(e.perStatus).toFixed(1)}
+                            </span>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground/60">d</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 export function TimeStatusChart({ data, brands, brandColors }: {
     data: TimeStatusData[]
     brands: string[]
@@ -52,55 +111,6 @@ export function TimeStatusChart({ data, brands, brandColors }: {
 
     const toggleSeries = (dataKey: string) => {
         setHiddenSeries(prev => ({ ...prev, [dataKey]: !prev[dataKey] }))
-    }
-
-    const CustomTooltip = ({ active, label }: any) => {
-        if (!active) return null
-
-        // Find the original per-status data for the hovered status
-        const originalPoint = cumulativeData.find(d => d.status === label)
-        if (!originalPoint) return null
-
-        // Build per-status display entries from the original (non-cumulative) values
-        const perStatusEntries = seriesKeys.map(({ key, color }) => ({
-            key,
-            color,
-            perStatus: originalPoint[`_${key}`] as number | null,
-        }))
-
-        // Only show visible, non-null entries, sorted by per-status value desc (average last)
-        const visible = perStatusEntries
-            .filter(e => !hiddenSeries[e.key] && e.perStatus !== null)
-            .sort((a, b) => {
-                if (a.key === AVERAGE_KEY) return 1
-                if (b.key === AVERAGE_KEY) return -1
-                return (b.perStatus ?? 0) - (a.perStatus ?? 0)
-            })
-
-        if (visible.length === 0) return null
-
-        return (
-            <div className="bg-card/95 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl min-w-[200px]"
-                style={{ borderColor: "rgba(0,212,255,0.15)" }}>
-                <p className="text-sm font-bold text-foreground mb-2 border-b border-border/50 pb-2">{label}</p>
-                <div className="space-y-1.5">
-                    {visible.map(e => (
-                        <div key={e.key} className="flex items-center justify-between gap-6">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-3 h-3 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: e.color }} />
-                                <span className="text-xs font-semibold text-muted-foreground">{e.key}</span>
-                            </div>
-                            <div className="flex items-baseline gap-0.5">
-                                <span className="text-sm font-bold font-mono text-foreground">
-                                    {Number(e.perStatus).toFixed(1)}
-                                </span>
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground/60">d</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
     }
 
     const renderCustomLegend = () => (
@@ -161,7 +171,7 @@ export function TimeStatusChart({ data, brands, brandColors }: {
                                 strokeDasharray: "5 4",
                                 strokeOpacity: 0.6,
                             }}
-                            content={<CustomTooltip />}
+                            content={<CustomTooltip cumulativeData={cumulativeData} seriesKeys={seriesKeys} hiddenSeries={hiddenSeries} />}
                             wrapperStyle={{ zIndex: 10 }}
                         />
                         {seriesKeys.map(({ key, color }) => (

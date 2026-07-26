@@ -88,6 +88,24 @@ export function DateRangeSidebar({ calendarBounds }: { calendarBounds: CalendarB
         }
     })
 
+    const applyDateRange = (from?: Date, to?: Date) => {
+        setDate({ from, to })
+        const params = new URLSearchParams(searchParams.toString())
+        if (from) { params.set("from", format(from, "yyyy-MM-dd")); params.delete("all") }
+        else { params.delete("from") }
+        if (to) { params.set("to", format(to, "yyyy-MM-dd")); params.delete("all") }
+        else { params.delete("to") }
+        if (!from && !to) params.set("all", "true")
+        try {
+            localStorage.setItem("dateRange", JSON.stringify({
+                from: from ? format(from, "yyyy-MM-dd") : null,
+                to: to ? format(to, "yyyy-MM-dd") : null,
+                all: !from && !to,
+            }))
+        } catch (_) { /* ignore */ }
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
     React.useEffect(() => {
         const fromParam = searchParams.get("from")
         const toParam = searchParams.get("to")
@@ -111,24 +129,6 @@ export function DateRangeSidebar({ calendarBounds }: { calendarBounds: CalendarB
             })
         }
     }, [searchParams])
-
-    const applyDateRange = (from?: Date, to?: Date) => {
-        setDate({ from, to })
-        const params = new URLSearchParams(searchParams.toString())
-        if (from) { params.set("from", format(from, "yyyy-MM-dd")); params.delete("all") }
-        else { params.delete("from") }
-        if (to) { params.set("to", format(to, "yyyy-MM-dd")); params.delete("all") }
-        else { params.delete("to") }
-        if (!from && !to) params.set("all", "true")
-        try {
-            localStorage.setItem("dateRange", JSON.stringify({
-                from: from ? format(from, "yyyy-MM-dd") : null,
-                to: to ? format(to, "yyyy-MM-dd") : null,
-                all: !from && !to,
-            }))
-        } catch (_) { /* ignore */ }
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    }
 
     const setQuickFilter = (preset: Preset) => {
         if (preset === 'all') {

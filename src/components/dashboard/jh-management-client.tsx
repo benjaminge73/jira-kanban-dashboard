@@ -882,6 +882,10 @@ function PlannedCell({
     }, [editing])
 
     useEffect(() => {
+        // Sync the input with the server-confirmed rate whenever it changes,
+        // unless the user is actively editing it (would otherwise clobber
+        // their keystrokes).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!editing) setValue(rate?.daily_rate?.toString() ?? "")
     }, [rate, editing])
 
