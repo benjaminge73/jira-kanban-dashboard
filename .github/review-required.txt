@@ -18,3 +18,9 @@ tailwindcss-animate
 next
 react
 react-dom
+
+# Outillage CI : ces actions portent le gate de relecture et l auto-merge
+# eux-memes. Une majeure peut renommer une entree sans qu aucun test applicatif
+# ne le voie. Relecture manuelle obligatoire.
+dependabot/fetch-metadata
+actions/create-github-app-token
