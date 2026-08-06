@@ -1,0 +1,26 @@
+# Dependances touchant une surface visible ou critique de l application.
+# Une PR Dependabot portant sur l une d elles recoit le label review-required
+# et n est pas auto-mergee. Les tests continuent de tourner normalement.
+# Motifs shell autorises (ex. @radix-ui/*). Une ligne = un paquet.
+
+framer-motion
+recharts
+react-day-picker
+radix-ui
+@radix-ui/*
+@headlessui/react
+lucide-react
+next-themes
+tailwindcss
+@tailwindcss/postcss
+tailwind-merge
+tailwindcss-animate
+next
+react
+react-dom
+
+# Outillage CI : ces actions portent le gate de relecture et l auto-merge
+# eux-memes. Une majeure peut renommer une entree sans qu aucun test applicatif
+# ne le voie. Relecture manuelle obligatoire.
+dependabot/fetch-metadata
+actions/create-github-app-token

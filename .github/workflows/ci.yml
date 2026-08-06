@@ -10,9 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -31,3 +31,39 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Merge automatique au vert : PR de l'owner ou de Dependabot (tous types de
+  # mises à jour, majors comprises). Remplace l'auto-merge natif GitHub.
+  auto-merge:
+    name: auto-merge
+    needs: build
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      (github.event.pull_request.user.login == github.repository_owner ||
+       github.event.pull_request.user.login == 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Verifie l'absence de flag de relecture
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} \
+               --json labels --jq '.labels[].name' | grep -qx 'review-required'; then
+            echo "hold=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::PR flaguee review-required, auto-merge suspendu."
+          else
+            echo "hold=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Squash-merge la PR et supprime la branche
+        if: steps.gate.outputs.hold != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh pr merge ${{ github.event.pull_request.number }}
+          --squash --delete-branch --repo ${{ github.repository }}
