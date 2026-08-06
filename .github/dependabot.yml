@@ -20,6 +20,23 @@ updates:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
       include: "scope"
+    ignore:
+      # lever-si: decision-humaine rappel-apres: 90j
+      # TypeScript 7 est la reecriture native : le detecteur de Next ne le
+      # reconnait pas et le build s'arrete sur "trying to use TypeScript but do
+      # not have the required package(s) installed". Ce n'est pas une erreur de
+      # types, c'est un blocage amont. Next ne declare pas `typescript` en peer,
+      # donc aucune condition verifiable : rappel a 90 jours, TS 7 etant recent.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
+      # lever-si: peer eslint-plugin-react eslint >=10
+      # ESLint 10 est bloque en amont : `eslint-config-next` depend de
+      # `eslint-plugin-react`, dont la derniere version publiee plafonne a
+      # `eslint ^9.7` (verifie le 2026-08-06). A retirer des que ce plafond bouge.
+      - dependency-name: "eslint"
+        update-types:
+          - "version-update:semver-major"
     groups:
       prod-minor-patch:
         dependency-type: "production"
