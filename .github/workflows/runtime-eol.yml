@@ -1,0 +1,54 @@
+name: Support des runtimes
+
+# Interroge endoflife.date chaque mois et ouvre une issue quand le runtime
+# declare approche de sa fin de support. Aucune date n'est codee en dur ici :
+# la source est interrogee a chaque passage, donc l'alerte ne peut pas perimer.
+# Dependabot surveille les dependances, pas le runtime — d'ou ce capteur.
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fin de support de la version Node declaree
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          major=$(jq -r '.engines.node // empty' package.json | tr -dc '0-9' | head -c2)
+          if [ -z "$major" ]; then
+            echo "::warning::Aucun engines.node dans package.json, rien a verifier."
+            exit 0
+          fi
+          eol=$(curl -fsS "https://endoflife.date/api/nodejs/${major}.json" | jq -r '.eol')
+          echo "Node ${major} — fin de support : ${eol}"
+          [ "$eol" = "false" ] && exit 0
+          limite=$(date -u -d '+90 days' +%F)
+          if [ "$eol" \> "$limite" ]; then
+            echo "Encore supporte au-dela de 90 jours, rien a signaler."
+            exit 0
+          fi
+          titre="Node ${major} sort du support le ${eol}"
+          if gh issue list --repo "$REPO" --state open --search "$titre in:title" \
+               --json title --jq '.[].title' | grep -qxF "$titre"; then
+            echo "Issue deja ouverte."
+            exit 0
+          fi
+          gh issue create --repo "$REPO" --title "$titre" --label dependencies --body \
+            "\`engines.node\` vaut **${major}**, dont le support s'arrete le **${eol}**.
+
+          A faire :
+          1. Monter \`engines.node\` dans \`package.json\` (source de verite unique).
+          2. Verifier que les workflows utilisent bien \`node-version-file: 'package.json'\`.
+          3. Aligner la version Node du projet Vercel.
+
+          Issue ouverte automatiquement par \`runtime-eol.yml\`."
