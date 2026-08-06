@@ -52,3 +52,99 @@ jobs:
           3. Aligner la version Node du projet Vercel.
 
           Issue ouverte automatiquement par \`runtime-eol.yml\`."
+
+  ignores:
+    # Un filtre `ignore` est invisible : Dependabot n'ouvre simplement plus la PR.
+    # Sans rappel, un gel provisoire devient permanent sans que personne ne le
+    # rediscute. Ce job lit la cle `# lever-si:` posee au-dessus de chaque
+    # filtre, en deux regimes :
+    #   peer <paquet> <dep> >=<version>  -> condition verifiable dans le registre
+    #   decision-humaine rappel-apres: <n>j -> condition non interrogeable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # l'age d'un filtre se lit dans l'historique, pas dans une date ecrite
+          # a la main qui perimerait des le premier oubli
+          fetch-depth: 0
+
+      - name: Filtres ignore arrives a echeance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          f=.github/dependabot.yml
+          [ -f "$f" ] || { echo "Pas de dependabot.yml."; exit 0; }
+          mapfile -t lignes < <(grep -n 'lever-si:' "$f" | cut -d: -f1) || true
+          if [ ${#lignes[@]} -eq 0 ]; then
+            echo "Aucun filtre porteur d'une cle lever-si."
+            exit 0
+          fi
+
+          ouvrir() {  # $1 titre  $2 corps
+            if gh issue list --repo "$REPO" --state open --search "$1 in:title" \
+                 --json title --jq '.[].title' | grep -qxF "$1"; then
+              echo "Issue deja ouverte : $1"
+              return 0
+            fi
+            gh issue create --repo "$REPO" --title "$1" --label dependencies --body "$2"
+          }
+
+          for l in "${lignes[@]}"; do
+            cle=$(sed -n "${l}p" "$f" | sed 's/.*lever-si:[[:space:]]*//')
+            pkg=$(tail -n +"$l" "$f" | grep -m1 'dependency-name:' \
+                  | sed 's/.*"\(.*\)".*/\1/')
+            [ -n "$pkg" ] || continue
+            regime=$(echo "$cle" | awk '{print $1}')
+            echo "--- $pkg : $cle"
+
+            if [ "$regime" = "peer" ]; then
+              amont=$(echo "$cle" | awk '{print $2}')
+              dep=$(echo "$cle" | awk '{print $3}')
+              cible=$(echo "$cle" | awk '{print $4}' | tr -dc '0-9.')
+              case "$cible" in *.*) ;; *) cible="$cible.0.0";; esac
+              range=$(npm view "$amont@latest" "peerDependencies.$dep" 2>/dev/null || true)
+              if [ -z "$range" ]; then
+                echo "Borne introuvable pour $amont ($dep), on ne conclut pas."
+                continue
+              fi
+              echo "$amont@latest declare $dep $range, cible $cible"
+              if npx --yes semver@7 -r "$range" "$cible" >/dev/null 2>&1; then
+                ouvrir "Le filtre sur $pkg peut etre leve" \
+"La condition de levee est retombee.
+
+\`$amont@latest\` declare desormais \`$dep $range\`, ce qui accepte \`$cible\`.
+
+A faire : retirer l entree \`$pkg\` du bloc \`ignore\` de \`.github/dependabot.yml\`. Dependabot rouvrira la PR au passage suivant, sans autre action.
+
+Issue ouverte automatiquement par \`runtime-eol.yml\`."
+              else
+                echo "Toujours bloque en amont, rien a signaler."
+              fi
+
+            elif [ "$regime" = "decision-humaine" ]; then
+              jours=$(echo "$cle" | sed -n 's/.*rappel-apres:[[:space:]]*\([0-9]*\)j.*/\1/p')
+              [ -n "$jours" ] || jours=180
+              pose=$(git log --diff-filter=A --format=%aI \
+                     -S "dependency-name: \"$pkg\"" -- "$f" | tail -1)
+              if [ -z "$pose" ]; then
+                echo "Date de pose introuvable dans l historique."
+                continue
+              fi
+              age=$(( ( $(date -u +%s) - $(date -u -d "$pose" +%s) ) / 86400 ))
+              echo "Filtre pose le ${pose%%T*}, age ${age} jours, seuil ${jours}"
+              if [ "$age" -ge "$jours" ]; then
+                ouvrir "Le filtre sur $pkg gele depuis $age jours" \
+"Ce filtre repose sur une decision, pas sur une contrainte amont : aucune verification automatique ne peut dire s il doit sauter.
+
+Pose le ${pose%%T*}, soit il y a **$age jours**, pour un rappel prevu a $jours jours.
+
+La decision tient-elle toujours ? Si oui, repousser l echeance en modifiant \`rappel-apres:\` dans \`.github/dependabot.yml\`. Sinon, retirer l entree \`$pkg\` du bloc \`ignore\`.
+
+Issue ouverte automatiquement par \`runtime-eol.yml\`."
+              fi
+
+            else
+              echo "::warning::Regime lever-si inconnu pour $pkg : $regime"
+            fi
+          done
