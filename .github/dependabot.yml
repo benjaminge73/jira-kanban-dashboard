@@ -21,6 +21,17 @@ updates:
       prefix-development: "chore(deps-dev)"
       include: "scope"
     ignore:
+      # lever-si: decision-humaine rappel-apres: 180j
+      # Pas de majeure de Next sans PR dediee. Une majeure de framework demande
+      # un changelog lu, une relecture et un deploiement surveille — pas un
+      # merge au fil de l'eau. Ce repo est deja en Next 16 : le filtre protege
+      # donc la bascule vers la 17. Pose le 2026-08-07, pour que les cinq repos
+      # Next du parc suivent la meme regle.
+      # `update-types` et non `versions` : ainsi un correctif de securite passe
+      # malgre le filtre, ce qui ne serait pas le cas avec une plage de versions.
+      - dependency-name: "next"
+        update-types:
+          - "version-update:semver-major"
       # lever-si: decision-humaine rappel-apres: 90j
       # TypeScript 7 est la reecriture native : le detecteur de Next ne le
       # reconnait pas et le build s'arrete sur "trying to use TypeScript but do
