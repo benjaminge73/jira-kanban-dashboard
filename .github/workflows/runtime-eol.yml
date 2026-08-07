@@ -18,7 +18,7 @@ jobs:
   node:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Fin de support de la version Node declaree
         env:
           GH_TOKEN: ${{ github.token }}
@@ -62,7 +62,7 @@ jobs:
     #   decision-humaine rappel-apres: <n>j -> non interrogeable, rappel a l'age
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # l'age d'un filtre se lit dans l'historique, pas dans une date ecrite
           # a la main qui perimerait des le premier oubli
