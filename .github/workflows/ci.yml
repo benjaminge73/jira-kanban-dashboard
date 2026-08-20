@@ -46,11 +46,72 @@ jobs:
       - name: Build
         run: npm run build
 
+  e2e:
+    name: e2e
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: "package.json"
+          cache: npm
+
+      - run: npm ci
+
+      # Aucune variable JIRA_* (ni ADMIN_PASSWORD, ni rien d'autre) sur cette
+      # étape ni la suivante, volontairement : c'est l'inverse du réflexe
+      # habituel. Le mode démo (CLAUDE.md, "Invariants") doit rester
+      # zero-config et byte-identique — "keep working with no environment
+      # variables at all". Cette étape EST la preuve exécutable de cette
+      # promesse : voir e2e/demo-zero-config.spec.ts et
+      # e2e/pas-de-fuite-live.spec.ts, qui échoueraient si le build en avait
+      # besoin ou basculait en mode live par accident.
+      - name: Build
+        run: npm run build
+
+      # Même contrainte système que sur les autres dépôts du parc :
+      # actions/cache ne persiste que ~/.cache/ms-playwright, jamais les libs
+      # apt que chromium lie. Un `playwright install chromium` seul, sur
+      # cache hit, laisserait le navigateur incapable de démarrer — d'où
+      # l'étape dédiée qui tourne à chaque run, cache ou non. Voir la recette
+      # CI officielle : https://playwright.dev/docs/ci-intro
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright chromium (with system deps)
+        timeout-minutes: 10
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit)
+        timeout-minutes: 10
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: E2E smoke
+        timeout-minutes: 10
+        run: npm run test:e2e:smoke
+
+      - name: Upload e2e report on failure
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   # Merge automatique au vert : PR de l'owner ou de Dependabot (tous types de
   # mises à jour, majors comprises). Remplace l'auto-merge natif GitHub.
   auto-merge:
     name: auto-merge
-    needs: build
+    needs: [build, e2e]
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false &&

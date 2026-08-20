@@ -65,6 +65,7 @@ coverage/
 cypress/videos/
 cypress/screenshots/
 test-results/
+playwright-report/
 
 # =========================
 # Data & Databases
