@@ -88,8 +88,23 @@ export function DateRangeSidebar({ calendarBounds }: { calendarBounds: CalendarB
         }
     })
 
-    const applyDateRange = (from?: Date, to?: Date) => {
-        setDate({ from, to })
+    // Keep `date` in sync with the URL during render (not in an effect) — see
+    // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+    const [prevSearchParams, setPrevSearchParams] = React.useState(searchParams)
+    if (searchParams !== prevSearchParams) {
+        setPrevSearchParams(searchParams)
+        const fromParam = searchParams.get("from")
+        const toParam = searchParams.get("to")
+        if (fromParam || toParam || searchParams.get("all")) {
+            setDate({
+                from: fromParam ? new Date(fromParam) : undefined,
+                to: toParam ? new Date(toParam) : undefined,
+            })
+        }
+    }
+
+    // Writes the range to the URL and localStorage; `date` follows via the URL sync above.
+    const persistDateRange = (from?: Date, to?: Date) => {
         const params = new URLSearchParams(searchParams.toString())
         if (from) { params.set("from", format(from, "yyyy-MM-dd")); params.delete("all") }
         else { params.delete("from") }
@@ -106,6 +121,11 @@ export function DateRangeSidebar({ calendarBounds }: { calendarBounds: CalendarB
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
+    const applyDateRange = (from?: Date, to?: Date) => {
+        setDate({ from, to })
+        persistDateRange(from, to)
+    }
+
     React.useEffect(() => {
         const fromParam = searchParams.get("from")
         const toParam = searchParams.get("to")
@@ -115,18 +135,13 @@ export function DateRangeSidebar({ calendarBounds }: { calendarBounds: CalendarB
                 const saved = localStorage.getItem("dateRange")
                 if (saved) {
                     const { from, to, all } = JSON.parse(saved)
-                    if (all) { applyDateRange(undefined, undefined); return }
-                    applyDateRange(from ? new Date(from) : undefined, to ? new Date(to) : undefined)
+                    if (all) { persistDateRange(undefined, undefined); return }
+                    persistDateRange(from ? new Date(from) : undefined, to ? new Date(to) : undefined)
                     return
                 }
             } catch (_) { /* ignore */ }
             const today = new Date()
-            applyDateRange(startOfMonth(today), endOfMonth(today))
-        } else {
-            setDate({
-                from: fromParam ? new Date(fromParam) : undefined,
-                to: toParam ? new Date(toParam) : undefined,
-            })
+            persistDateRange(startOfMonth(today), endOfMonth(today))
         }
     }, [searchParams])
 
