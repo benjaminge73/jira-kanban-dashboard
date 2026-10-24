@@ -23,3 +23,7 @@ react-dom
 # peut renommer une sortie sans qu aucun test applicatif ne le voie. Relecture
 # manuelle obligatoire.
 dependabot/fetch-metadata
+
+# Compilateur : la premiere majeure apres levee du filtre (TS 7, reecriture
+# native) doit passer par la relecture, pas par l auto-merge seul.
+typescript
