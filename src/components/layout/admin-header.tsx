@@ -37,7 +37,7 @@ export function AdminHeader({ mode, authEnabled = false, warnNoPassword = false 
                     </span>
                     {authEnabled && (
                         <button
-                            onClick={() => logoutAdmin()}
+                            onClick={() => void logoutAdmin()}
                             className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors border rounded px-2.5 py-1"
                         >
                             <LogOut className="h-3.5 w-3.5" />
