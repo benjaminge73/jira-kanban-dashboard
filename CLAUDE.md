@@ -96,5 +96,6 @@ All optional — absence ⇒ demo mode. See `.env.example` for the full referenc
 - i18n: every UI string goes through `t()` with a `TranslationKey`; add EN + FR together. (Known leftovers: unit suffixes like "j"/"SP"/"JH" and the "Moyenne" pivot key are still hardcoded.)
 - Pure, testable logic goes in `lib/flow` / `lib/financial` / `lib/auth` (no `"use server"`); actions and server components wrap it.
 - After any structural change, update this CLAUDE.md in the same turn.
-- `npm run dev` (port 3001), `npm run build`, `npm run lint`, `npm test` (vitest), `npx tsc --noEmit`.
+- `npm run dev` (port 3001), `npm run build`, `npm run lint` (Oxlint type-aware, `oxlint --type-aware`), `npm test` (vitest), `npx tsc --noEmit`.
+- Lint = **Oxlint + oxlint-tsgolint** (config `.oxlintrc.json`, plus d'ESLint : typescript-eslint plafonnait TypeScript < 6.1). Noms de règles : `nextjs/*`, `react/*` (dont les règles React Compiler ex-`react-hooks/*`), `typescript/*`, `jsx-a11y/*`, `import/*`. Oxlint respecte les `// eslint-disable-next-line`. `react/purity` est désactivée sur `src/app/**/page.tsx` et deux composants clients (`new Date()` voulu, parité avec l'ancien lint) : voir le commentaire dans `.oxlintrc.json`. Règles type-aware actives : `no-floating-promises`, `no-misused-promises`, `await-thenable`, `no-deprecated`.
 - CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: `npm ci` → lint → `tsc --noEmit` → test → build. Must stay green before merging.

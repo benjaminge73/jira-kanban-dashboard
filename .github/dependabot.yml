@@ -30,13 +30,6 @@ updates:
       - dependency-name: "typescript"
         update-types:
           - "version-update:semver-major"
-      # lever-si: peer eslint-plugin-react eslint >=10
-      # ESLint 10 est bloque en amont : `eslint-config-next` depend de
-      # `eslint-plugin-react`, dont la derniere version publiee plafonne a
-      # `eslint ^9.7` (verifie le 2026-08-06). A retirer des que ce plafond bouge.
-      - dependency-name: "eslint"
-        update-types:
-          - "version-update:semver-major"
     groups:
       prod-minor-patch:
         dependency-type: "production"

@@ -266,7 +266,7 @@ function QualityRejectionRow({
                     isExpanded ? "bg-white/[0.04]" : "hover:bg-white/[0.03]"
                 }`}
                 style={{ borderColor: "rgba(255,255,255,0.05)" }}
-                onClick={toggleExpand}
+                onClick={() => void toggleExpand()}
             >
                 <td className="px-4 py-3 text-muted-foreground w-8">
                     {isExpanded

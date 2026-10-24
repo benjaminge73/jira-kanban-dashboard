@@ -10,7 +10,7 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "oxlint --type-aware",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep \"@smoke\""
@@ -40,8 +40,8 @@
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "tailwindcss": "^4",
     "typescript": "5.9.3",
     "vitest": "^5.0.5"
