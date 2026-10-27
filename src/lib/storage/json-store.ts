@@ -11,8 +11,11 @@
 import { promises as fs } from "fs"
 import path from "path"
 
+// The data directory is only known at runtime (DATA_DIR or ./data), so the
+// turbopackIgnore comments tell Turbopack not to trace these dynamic paths;
+// otherwise the whole project (sources, public/) is bundled with the server code.
 function dataDir(): string {
-  return process.env.DATA_DIR || path.join(process.cwd(), "data")
+  return process.env.DATA_DIR || path.join(/* turbopackIgnore: true */ process.cwd(), "data")
 }
 
 function filePath(name: string): string {
